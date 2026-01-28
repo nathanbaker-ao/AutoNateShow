@@ -23,6 +23,7 @@ We're building the foundation for a fully autonomous content creation system whe
 ### AI Integration
 - **Claude Code** - AI-assisted development with custom Remotion skills
 - **OpenAI TTS** - Voice generation using `gpt-4o-mini-tts-2025-12-15` for character voiceovers and lipsync
+- **Meshy.ai** - 3D asset generation for characters and environments
 
 ### Output Formats
 We target multiple aspect ratios to maximize platform reach:
