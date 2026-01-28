@@ -14,8 +14,8 @@ import { Environment } from "../environments";
 // Timing constants (at 30fps)
 const FPS = 30;
 
-// Narrator audio: "In a world full of stories waiting to be told..."
-const NARRATOR_START = 30; // 1s in
+// Narrator audio starts immediately
+const NARRATOR_START = 0;
 const NARRATOR_DURATION_SEC = 6.96;
 const NARRATOR_DURATION = Math.ceil(NARRATOR_DURATION_SEC * FPS); // ~209 frames
 
@@ -30,6 +30,14 @@ const AUTONATE_DURATION = Math.ceil(AUTONATE_DURATION_SEC * FPS); // ~104 frames
 // Waving continues after audio ends for a natural finish
 const WAVE_EXTRA_FRAMES = 60; // 2 seconds of continued waving after audio
 
+// Waving animation speed control
+// The hand raise is roughly the first 1.2s of the 5.37s animation clip.
+// We play the raise at 3x speed (done in ~0.4s real time = 12 frames),
+// then slow to 0.7x for the actual waving portion.
+const WAVE_RAISE_ANIM_TIME = 1.2; // seconds into clip where raise finishes
+const WAVE_RAISE_SPEED = 3.0; // fast raise
+const WAVE_BODY_SPEED = 0.7; // slower, relaxed waving
+
 // Character position
 const CHARACTER_Y = -4.1;
 const CHARACTER_POSITION: [number, number, number] = [0, CHARACTER_Y, 1.3];
@@ -40,9 +48,33 @@ const NARRATOR_TEXT =
 const AUTONATE_TEXT = "What up doe, world! I'm AutoNate!";
 
 /**
+ * Compute waving animation time with variable speed:
+ * - Fast during the initial hand raise (~first 1.2s of clip at 3x)
+ * - Slow during the actual waving (0.7x)
+ */
+function getWavingAnimationTime(waveFrame: number): number {
+  const realTime = waveFrame / FPS;
+
+  // How long does the raise take in real time at the fast speed?
+  const raiseRealDuration = WAVE_RAISE_ANIM_TIME / WAVE_RAISE_SPEED;
+
+  if (realTime <= raiseRealDuration) {
+    // During the raise: map real time to animation time at fast speed
+    return realTime * WAVE_RAISE_SPEED;
+  } else {
+    // After the raise: continue from where raise ended, at slow speed
+    const timeAfterRaise = realTime - raiseRealDuration;
+    return WAVE_RAISE_ANIM_TIME + timeAfterRaise * WAVE_BODY_SPEED;
+  }
+}
+
+/**
  * Inner scene component for the 3D content
  */
-const SceneContent: React.FC<{ isWaving: boolean }> = ({ isWaving }) => {
+const SceneContent: React.FC<{
+  isWaving: boolean;
+  wavingAnimationTime?: number;
+}> = ({ isWaving, wavingAnimationTime }) => {
   return (
     <>
       {/* Lighting */}
@@ -73,6 +105,7 @@ const SceneContent: React.FC<{ isWaving: boolean }> = ({ isWaving }) => {
           talking={false}
           walking={false}
           waving={isWaving}
+          wavingAnimationTime={wavingAnimationTime}
           position={CHARACTER_POSITION}
           rotation={[0, 0, 0]}
           scale={1}
@@ -101,9 +134,14 @@ export const AutoNateIntro: React.FC = () => {
   const { width, height, fps } = useVideoConfig();
 
   // AutoNate waves during his audio + continues waving after for a natural finish
-  const isWaving =
-    frame >= AUTONATE_START &&
-    frame < AUTONATE_START + AUTONATE_DURATION + WAVE_EXTRA_FRAMES;
+  const waveStartFrame = AUTONATE_START;
+  const waveEndFrame = AUTONATE_START + AUTONATE_DURATION + WAVE_EXTRA_FRAMES;
+  const isWaving = frame >= waveStartFrame && frame < waveEndFrame;
+
+  // Compute variable-speed waving animation time
+  const wavingAnimationTime = isWaving
+    ? getWavingAnimationTime(frame - waveStartFrame)
+    : undefined;
 
   // Determine which subtitle to show
   const isNarratorSpeaking =
@@ -127,7 +165,10 @@ export const AutoNateIntro: React.FC = () => {
           fov: 50,
         }}
       >
-        <SceneContent isWaving={isWaving} />
+        <SceneContent
+          isWaving={isWaving}
+          wavingAnimationTime={wavingAnimationTime}
+        />
       </ThreeCanvas>
 
       {/* Narrator Audio */}

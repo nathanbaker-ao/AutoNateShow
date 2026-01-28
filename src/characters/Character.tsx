@@ -15,6 +15,8 @@ interface CharacterProps {
   scale?: number | [number, number, number];
   /** Speed multiplier for animation playback */
   animationSpeed?: number;
+  /** Override animation time in seconds (bypasses frame-based calculation) */
+  animationTime?: number;
   /** Whether to loop the animation */
   loop?: boolean;
   /** Whether this character is visible */
@@ -33,6 +35,7 @@ export const Character: React.FC<CharacterProps> = ({
   rotation = [0, 0, 0],
   scale = 1,
   animationSpeed = 1,
+  animationTime,
   loop = true,
   visible = true,
 }) => {
@@ -105,9 +108,13 @@ export const Character: React.FC<CharacterProps> = ({
 
     const action = actions[names[0]];
     if (action) {
-      // Calculate animation time based on current frame
-      const timeInSeconds = (frame / fps) * animationSpeed;
       const clipDuration = action.getClip().duration;
+
+      // Use explicit animationTime if provided, otherwise calculate from frame
+      const timeInSeconds =
+        animationTime !== undefined
+          ? animationTime
+          : (frame / fps) * animationSpeed;
 
       if (loop) {
         action.time = timeInSeconds % clipDuration;
@@ -118,7 +125,7 @@ export const Character: React.FC<CharacterProps> = ({
       // Force mixer update to apply the new time
       mixer.update(0);
     }
-  }, [frame, fps, names, actions, animationSpeed, loop, mixer]);
+  }, [frame, fps, names, actions, animationSpeed, animationTime, loop, mixer]);
 
   const scaleArray: [number, number, number] = typeof scale === "number"
     ? [scale, scale, scale]
@@ -151,6 +158,8 @@ interface AutoNateProps {
   scale?: number;
   /** Animation speed multiplier */
   animationSpeed?: number;
+  /** Override animation time in seconds (for variable-speed playback) */
+  wavingAnimationTime?: number;
 }
 
 export const AutoNate: React.FC<AutoNateProps> = ({
@@ -161,6 +170,7 @@ export const AutoNate: React.FC<AutoNateProps> = ({
   rotation = [0, 0, 0],
   scale = 1,
   animationSpeed = 1,
+  wavingAnimationTime,
 }) => {
   // Determine active state (priority: waving > talking > walking > idle)
   const activeState = waving
@@ -195,6 +205,7 @@ export const AutoNate: React.FC<AutoNateProps> = ({
       <Character
         modelPath={staticFile("characters/autonate-waving.glb")}
         visible={activeState === "waving"}
+        animationTime={wavingAnimationTime}
         {...sharedProps}
       />
     </>

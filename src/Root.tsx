@@ -40,7 +40,7 @@ export const RemotionRoot: React.FC = () => {
       <Composition
         id="AutoNateIntro"
         component={AutoNateIntro}
-        durationInFrames={450} // 15 seconds (narrator ~7s + gap + AutoNate ~3.5s + waving + buffer)
+        durationInFrames={420} // 14 seconds (narrator ~7s + gap + AutoNate ~3.5s + waving + buffer)
         fps={30}
         width={1920}
         height={1080}

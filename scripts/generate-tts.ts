@@ -51,23 +51,23 @@ async function generateTTS(options: TTSOptions): Promise<void> {
   console.log(`Audio saved to: ${outputPath}`);
 }
 
-// Narrator voice configuration
-const NARRATOR_VOICE = "onyx" as const;
+// Narrator voice configuration - warm female narrator
+const NARRATOR_VOICE = "nova" as const;
 const NARRATOR_INSTRUCTIONS = `
-Voice: Deep, smooth, and cinematic narrator voice.
-Style: Like a nature documentary or epic trailer narrator. Authoritative but warm.
-Pacing: Measured and deliberate, with dramatic pauses.
-Emotion: Sense of wonder and anticipation, building excitement.
+Voice: Warm, smooth, and captivating female narrator.
+Style: Like a polished storyteller or cinematic trailer narrator. Confident and inviting.
+Pacing: Measured and deliberate, with dramatic pauses for effect.
+Emotion: Sense of wonder and anticipation, drawing the listener in.
 `;
 
-// AutoNate's voice configuration - energetic and exciting
-const AUTONATE_VOICE = "fable" as const;
+// AutoNate's voice configuration - young, happy, excited
+const AUTONATE_VOICE = "ash" as const;
 const AUTONATE_INSTRUCTIONS = `
-Voice: Energetic, youthful, and hyped up.
-Personality: Street-smart, confident, genuinely excited, radiating big energy.
-Style: Like a hype man or an excited friend greeting you. Urban and cool.
-Pacing: Quick and punchy with attitude.
-Emotion: Pure excitement and swagger. This is his moment and he's PUMPED.
+Voice: Young, bright, and bursting with excitement.
+Personality: Happy, enthusiastic kid energy. Like a young person who just got the best news ever.
+Style: Genuine joy and infectious excitement. Big smile in the voice.
+Pacing: Upbeat and lively, words tumbling out with pure happiness.
+Emotion: Overflowing excitement and joy. This is the happiest moment of his life and he wants the whole world to know.
 `;
 
 // Generate narrated intro scene
