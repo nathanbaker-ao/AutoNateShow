@@ -40,6 +40,7 @@ export const Character: React.FC<CharacterProps> = ({
   const { fps } = useVideoConfig();
 
   // Use SkeletonUtils.clone for proper skeleton/bone cloning (required for rigged models)
+  // Include modelPath in dependencies to ensure we get a fresh clone when model changes
   const clonedScene = useMemo(() => {
     const clone = SkeletonUtils.clone(scene);
 
@@ -73,22 +74,34 @@ export const Character: React.FC<CharacterProps> = ({
       }
     });
     return clone;
-  }, [scene]);
+  }, [scene, modelPath]);
 
   // Use ref for animations - attach to the group that wraps our clone
-  const { actions, names } = useAnimations(animations, group);
+  const { actions, names, mixer } = useAnimations(animations, group);
 
-  // Play the first available animation, driven by useCurrentFrame
+  // Initialize animation when model/animations change
+  useEffect(() => {
+    if (names.length === 0 || !actions[names[0]]) return;
+
+    // Stop all current actions and reset mixer
+    mixer.stopAllAction();
+
+    const action = actions[names[0]];
+    if (action) {
+      action.reset();
+      action.setLoop(loop ? THREE.LoopRepeat : THREE.LoopOnce, Infinity);
+      action.clampWhenFinished = !loop;
+      action.play();
+      action.paused = true;
+    }
+  }, [names, actions, mixer, loop, modelPath]);
+
+  // Update animation time based on current frame
   useEffect(() => {
     if (names.length === 0 || !actions[names[0]]) return;
 
     const action = actions[names[0]];
     if (action) {
-      action.reset();
-      action.play();
-      action.paused = true;
-      action.setLoop(loop ? THREE.LoopRepeat : THREE.LoopOnce, Infinity);
-
       // Calculate animation time based on current frame
       const timeInSeconds = (frame / fps) * animationSpeed;
       const clipDuration = action.getClip().duration;
@@ -98,8 +111,11 @@ export const Character: React.FC<CharacterProps> = ({
       } else {
         action.time = Math.min(timeInSeconds, clipDuration);
       }
+
+      // Force mixer update to apply the new time
+      mixer.update(0);
     }
-  }, [frame, fps, names, actions, animationSpeed, loop]);
+  }, [frame, fps, names, actions, animationSpeed, loop, mixer]);
 
   const scaleArray: [number, number, number] = typeof scale === "number"
     ? [scale, scale, scale]
@@ -120,8 +136,10 @@ export const Character: React.FC<CharacterProps> = ({
 interface AutoNateProps {
   /** Whether AutoNate is currently talking */
   talking?: boolean;
-  /** Whether AutoNate is walking (uses walking model if available, otherwise idle) */
+  /** Whether AutoNate is walking */
   walking?: boolean;
+  /** Whether AutoNate is waving */
+  waving?: boolean;
   /** Position in 3D space */
   position?: [number, number, number];
   /** Rotation in radians */
@@ -135,23 +153,33 @@ interface AutoNateProps {
 export const AutoNate: React.FC<AutoNateProps> = ({
   talking = false,
   walking = false,
+  waving = false,
   position = [0, 0, 0],
   rotation = [0, 0, 0],
   scale = 1,
   animationSpeed = 1,
 }) => {
-  // Priority: talking > walking > idle
+  // Priority: waving > talking > walking > idle
   let modelPath: string;
-  if (talking) {
+  let modelKey: string;
+  if (waving) {
+    modelPath = staticFile("characters/autonate-waving.glb");
+    modelKey = "waving";
+  } else if (talking) {
     modelPath = staticFile("characters/autonate-talking.glb");
+    modelKey = "talking";
   } else if (walking) {
     modelPath = staticFile("characters/autonate-walking.glb");
+    modelKey = "walking";
   } else {
     modelPath = staticFile("characters/autonate-idle.glb");
+    modelKey = "idle";
   }
 
+  // Use key to force remount when model changes - ensures clean animation state
   return (
     <Character
+      key={modelKey}
       modelPath={modelPath}
       position={position}
       rotation={rotation}
@@ -269,3 +297,4 @@ export const preloadCharacter = (modelPath: string) => {
 preloadCharacter(staticFile("characters/autonate-idle.glb"));
 preloadCharacter(staticFile("characters/autonate-talking.glb"));
 preloadCharacter(staticFile("characters/autonate-walking.glb"));
+preloadCharacter(staticFile("characters/autonate-waving.glb"));

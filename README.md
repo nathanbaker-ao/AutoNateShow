@@ -22,7 +22,7 @@ We're building the foundation for a fully autonomous content creation system whe
 
 ### AI Integration
 - **Claude Code** - AI-assisted development with custom Remotion skills
-- **OpenAI TTS** - Voice generation using `gpt-4o-mini-tts-2025-12-15` for character voiceovers and lipsync
+- **OpenAI TTS** - Voice generation using `gpt-4o-mini-tts-2025-12-15` for narration and character voices
 - **Meshy.ai** - 3D asset generation for characters and environments
 
 ### Output Formats
@@ -47,14 +47,20 @@ public/
 ├── characters/       # Character .glb models
 │   ├── autonate-idle.glb
 │   ├── autonate-talking.glb
-│   └── autonate-walking.glb
+│   ├── autonate-walking.glb
+│   └── autonate-waving.glb
 └── environments/     # Environment .glb models
 ```
 
 ## Features
 
+### Narrated Video System
+- **Narrator-driven storytelling** - A narrator tells the story while 3D animations and scenes bring it to life
+- **Distinct character voices** - When characters speak, they use their own unique voice separate from the narrator
+- **Animation-supported dialogue** - Characters animate (waving, walking, idle) to support the narration rather than lip-syncing
+
 ### Character System
-- **State-based animations** - Characters switch between idle, walking, and talking states
+- **State-based animations** - Characters switch between idle, walking, talking, and waving states
 - **Waypoint-based movement** - Define walking paths with frame-accurate timing
 - **Automatic rotation** - Characters face their movement direction
 
@@ -98,9 +104,9 @@ This project uses Claude Code with custom Remotion skills for AI-assisted develo
 
 ## Roadmap
 
-- [ ] Lipsync integration with OpenAI TTS
+- [ ] Narration system with multi-voice support
 - [ ] Multiple character scene support
-- [ ] Dialogue system with automatic timing
+- [ ] Narrator + character dialogue timing system
 - [ ] 9:16 vertical format compositions
 - [ ] Scene library with AI selection
 - [ ] Character animation library with capability descriptions

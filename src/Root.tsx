@@ -1,7 +1,7 @@
 import "./index.css";
 import { Composition } from "remotion";
 import { MyComposition } from "./Composition";
-import { ComedySkit, AutoNateScene } from "./compositions";
+import { ComedySkit, AutoNateScene, AutoNateIntro } from "./compositions";
 
 export const RemotionRoot: React.FC = () => {
   return (
@@ -26,11 +26,21 @@ export const RemotionRoot: React.FC = () => {
         height={1080}
       />
 
-      {/* AutoNate Test Scene */}
+      {/* AutoNate Walking Scene */}
       <Composition
         id="AutoNateScene"
         component={AutoNateScene}
         durationInFrames={300} // 10 seconds at 30fps
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+
+      {/* AutoNate Intro - with voiceover */}
+      <Composition
+        id="AutoNateIntro"
+        component={AutoNateIntro}
+        durationInFrames={300} // 10 seconds (audio is ~7s + buffer)
         fps={30}
         width={1920}
         height={1080}
