@@ -51,29 +51,48 @@ async function generateTTS(options: TTSOptions): Promise<void> {
   console.log(`Audio saved to: ${outputPath}`);
 }
 
-// AutoNate's voice configuration
-const AUTONATE_VOICE = "onyx";
-const AUTONATE_INSTRUCTIONS = `
-Voice: Deep, warm, and enthusiastic male voice.
-Personality: Friendly, adventurous, and genuinely excited to share stories.
-Style: Speak with energy and expressiveness, like a passionate storyteller or show host.
-Pacing: Clear articulation with natural pauses for emphasis.
-Emotion: Convey genuine excitement and warmth.
+// Narrator voice configuration
+const NARRATOR_VOICE = "onyx" as const;
+const NARRATOR_INSTRUCTIONS = `
+Voice: Deep, smooth, and cinematic narrator voice.
+Style: Like a nature documentary or epic trailer narrator. Authoritative but warm.
+Pacing: Measured and deliberate, with dramatic pauses.
+Emotion: Sense of wonder and anticipation, building excitement.
 `;
 
-// Generate AutoNate's intro
-async function main() {
-  const text = "Hello world, I'm AutoNate and I am so excited to take you along with me on my adventures!";
+// AutoNate's voice configuration - energetic and exciting
+const AUTONATE_VOICE = "fable" as const;
+const AUTONATE_INSTRUCTIONS = `
+Voice: Energetic, youthful, and hyped up.
+Personality: Street-smart, confident, genuinely excited, radiating big energy.
+Style: Like a hype man or an excited friend greeting you. Urban and cool.
+Pacing: Quick and punchy with attitude.
+Emotion: Pure excitement and swagger. This is his moment and he's PUMPED.
+`;
 
+// Generate narrated intro scene
+async function main() {
+  const outputDir = path.join(__dirname, "../public/audio/voiceovers");
+
+  // 1. Narrator introduces AutoNate
   await generateTTS({
-    text,
+    text: "In a world full of stories waiting to be told, one character is ready to take the stage.",
+    voice: NARRATOR_VOICE,
+    outputPath: path.join(outputDir, "narrator-intro.mp3"),
+    instructions: NARRATOR_INSTRUCTIONS,
+    speed: 1.0,
+  });
+
+  // 2. AutoNate speaks
+  await generateTTS({
+    text: "What up doe, world! I'm AutoNate!",
     voice: AUTONATE_VOICE,
-    outputPath: path.join(__dirname, "../public/audio/voiceovers/autonate-intro.mp3"),
+    outputPath: path.join(outputDir, "autonate-whatsup.mp3"),
     instructions: AUTONATE_INSTRUCTIONS,
     speed: 1.0,
   });
 
-  console.log("\nDone! Audio generated successfully.");
+  console.log("\nDone! All audio generated successfully.");
 }
 
 main().catch(console.error);

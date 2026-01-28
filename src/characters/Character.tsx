@@ -17,6 +17,8 @@ interface CharacterProps {
   animationSpeed?: number;
   /** Whether to loop the animation */
   loop?: boolean;
+  /** Whether this character is visible */
+  visible?: boolean;
 }
 
 /**
@@ -32,6 +34,7 @@ export const Character: React.FC<CharacterProps> = ({
   scale = 1,
   animationSpeed = 1,
   loop = true,
+  visible = true,
 }) => {
   const group = useRef<THREE.Group>(null);
   const { scene, animations } = useGLTF(modelPath);
@@ -123,7 +126,7 @@ export const Character: React.FC<CharacterProps> = ({
 
   // Wrap in group to handle transforms - position/rotation/scale on group, primitive inside
   return (
-    <group ref={group} position={position} rotation={rotation} scale={scaleArray}>
+    <group ref={group} position={position} rotation={rotation} scale={scaleArray} visible={visible}>
       <primitive object={clonedScene} />
     </group>
   );
@@ -159,34 +162,42 @@ export const AutoNate: React.FC<AutoNateProps> = ({
   scale = 1,
   animationSpeed = 1,
 }) => {
-  // Priority: waving > talking > walking > idle
-  let modelPath: string;
-  let modelKey: string;
-  if (waving) {
-    modelPath = staticFile("characters/autonate-waving.glb");
-    modelKey = "waving";
-  } else if (talking) {
-    modelPath = staticFile("characters/autonate-talking.glb");
-    modelKey = "talking";
-  } else if (walking) {
-    modelPath = staticFile("characters/autonate-walking.glb");
-    modelKey = "walking";
-  } else {
-    modelPath = staticFile("characters/autonate-idle.glb");
-    modelKey = "idle";
-  }
+  // Determine active state (priority: waving > talking > walking > idle)
+  const activeState = waving
+    ? "waving"
+    : talking
+      ? "talking"
+      : walking
+        ? "walking"
+        : "idle";
 
-  // Use key to force remount when model changes - ensures clean animation state
+  // Render all models simultaneously, toggling visibility to avoid jarring swaps.
+  // Each model continuously animates in the background so transitions are seamless.
+  const sharedProps = { position, rotation, scale, animationSpeed, loop: true };
+
   return (
-    <Character
-      key={modelKey}
-      modelPath={modelPath}
-      position={position}
-      rotation={rotation}
-      scale={scale}
-      animationSpeed={animationSpeed}
-      loop={true}
-    />
+    <>
+      <Character
+        modelPath={staticFile("characters/autonate-idle.glb")}
+        visible={activeState === "idle"}
+        {...sharedProps}
+      />
+      <Character
+        modelPath={staticFile("characters/autonate-talking.glb")}
+        visible={activeState === "talking"}
+        {...sharedProps}
+      />
+      <Character
+        modelPath={staticFile("characters/autonate-walking.glb")}
+        visible={activeState === "walking"}
+        {...sharedProps}
+      />
+      <Character
+        modelPath={staticFile("characters/autonate-waving.glb")}
+        visible={activeState === "waving"}
+        {...sharedProps}
+      />
+    </>
   );
 };
 

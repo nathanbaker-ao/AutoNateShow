@@ -36,11 +36,11 @@ export const RemotionRoot: React.FC = () => {
         height={1080}
       />
 
-      {/* AutoNate Intro - with voiceover */}
+      {/* AutoNate Intro - narrated with character voice */}
       <Composition
         id="AutoNateIntro"
         component={AutoNateIntro}
-        durationInFrames={300} // 10 seconds (audio is ~7s + buffer)
+        durationInFrames={450} // 15 seconds (narrator ~7s + gap + AutoNate ~3.5s + waving + buffer)
         fps={30}
         width={1920}
         height={1080}

@@ -11,20 +11,38 @@ import {
 import { AutoNate, FollowCamera } from "../characters";
 import { Environment } from "../environments";
 
-// Audio timing constants
-const AUDIO_START_FRAME = 30; // Start audio after 1 second
-const AUDIO_DURATION_SECONDS = 6.912;
+// Timing constants (at 30fps)
 const FPS = 30;
-const AUDIO_DURATION_FRAMES = Math.ceil(AUDIO_DURATION_SECONDS * FPS); // ~207 frames
+
+// Narrator audio: "In a world full of stories waiting to be told..."
+const NARRATOR_START = 30; // 1s in
+const NARRATOR_DURATION_SEC = 6.96;
+const NARRATOR_DURATION = Math.ceil(NARRATOR_DURATION_SEC * FPS); // ~209 frames
+
+// Gap between narrator and AutoNate speaking
+const GAP_FRAMES = 30; // 1 second pause
+
+// AutoNate audio: "What up doe, world! I'm AutoNate!"
+const AUTONATE_START = NARRATOR_START + NARRATOR_DURATION + GAP_FRAMES;
+const AUTONATE_DURATION_SEC = 3.456;
+const AUTONATE_DURATION = Math.ceil(AUTONATE_DURATION_SEC * FPS); // ~104 frames
+
+// Waving continues after audio ends for a natural finish
+const WAVE_EXTRA_FRAMES = 60; // 2 seconds of continued waving after audio
 
 // Character position
 const CHARACTER_Y = -4.1;
 const CHARACTER_POSITION: [number, number, number] = [0, CHARACTER_Y, 1.3];
 
+// Subtitle text
+const NARRATOR_TEXT =
+  "In a world full of stories waiting to be told, one character is ready to take the stage.";
+const AUTONATE_TEXT = "What up doe, world! I'm AutoNate!";
+
 /**
  * Inner scene component for the 3D content
  */
-const SceneContent: React.FC<{ isTalking: boolean }> = ({ isTalking }) => {
+const SceneContent: React.FC<{ isWaving: boolean }> = ({ isWaving }) => {
   return (
     <>
       {/* Lighting */}
@@ -49,13 +67,14 @@ const SceneContent: React.FC<{ isTalking: boolean }> = ({ isTalking }) => {
         />
       </Sequence>
 
-      {/* AutoNate - standing and talking */}
+      {/* AutoNate - idle by default, waving when he speaks */}
       <Sequence layout="none">
         <AutoNate
-          talking={isTalking}
+          talking={false}
           walking={false}
+          waving={isWaving}
           position={CHARACTER_POSITION}
-          rotation={[0, 0, 0]} // Facing camera
+          rotation={[0, 0, 0]}
           scale={1}
         />
       </Sequence>
@@ -63,33 +82,38 @@ const SceneContent: React.FC<{ isTalking: boolean }> = ({ isTalking }) => {
       {/* Camera focused on AutoNate */}
       <FollowCamera
         target={CHARACTER_POSITION}
-        offset={[0, 2, 4]} // Closer camera for intro
+        offset={[0, 2, 4]}
         smoothing={0.05}
         lookAt={true}
-        lookAtOffset={[0, 1, 0]} // Look at upper body/face
+        lookAtOffset={[0, 1, 0]}
       />
     </>
   );
 };
 
 /**
- * AutoNate Intro Scene
+ * AutoNate Intro Scene - Narrated
  *
- * AutoNate introduces himself with voice and talking animation.
- * Audio: "Hello world, I'm AutoNate and I am so excited to take you along with me on my adventures!"
+ * Narrator introduces the scene, then AutoNate speaks with his own voice while waving.
  */
 export const AutoNateIntro: React.FC = () => {
   const frame = useCurrentFrame();
   const { width, height, fps } = useVideoConfig();
 
-  // Determine if AutoNate should be talking based on audio timing
-  const audioStartFrame = AUDIO_START_FRAME;
-  const audioEndFrame = AUDIO_START_FRAME + AUDIO_DURATION_FRAMES;
-  const isTalking = frame >= audioStartFrame && frame < audioEndFrame;
+  // AutoNate waves during his audio + continues waving after for a natural finish
+  const isWaving =
+    frame >= AUTONATE_START &&
+    frame < AUTONATE_START + AUTONATE_DURATION + WAVE_EXTRA_FRAMES;
 
-  // Subtitle text
-  const subtitleText =
-    "Hello world, I'm AutoNate and I am so excited to take you along with me on my adventures!";
+  // Determine which subtitle to show
+  const isNarratorSpeaking =
+    frame >= NARRATOR_START && frame < NARRATOR_START + NARRATOR_DURATION;
+  const isAutoNateSpeaking =
+    frame >= AUTONATE_START && frame < AUTONATE_START + AUTONATE_DURATION;
+
+  let subtitleText = "";
+  if (isNarratorSpeaking) subtitleText = NARRATOR_TEXT;
+  if (isAutoNateSpeaking) subtitleText = AUTONATE_TEXT;
 
   return (
     <AbsoluteFill style={{ backgroundColor: "#0a0a0f" }}>
@@ -103,12 +127,17 @@ export const AutoNateIntro: React.FC = () => {
           fov: 50,
         }}
       >
-        <SceneContent isTalking={isTalking} />
+        <SceneContent isWaving={isWaving} />
       </ThreeCanvas>
 
-      {/* Audio */}
-      <Sequence from={audioStartFrame} durationInFrames={AUDIO_DURATION_FRAMES}>
-        <Audio src={staticFile("audio/voiceovers/autonate-intro.mp3")} />
+      {/* Narrator Audio */}
+      <Sequence from={NARRATOR_START} durationInFrames={NARRATOR_DURATION}>
+        <Audio src={staticFile("audio/voiceovers/narrator-intro.mp3")} />
+      </Sequence>
+
+      {/* AutoNate Audio */}
+      <Sequence from={AUTONATE_START} durationInFrames={AUTONATE_DURATION}>
+        <Audio src={staticFile("audio/voiceovers/autonate-whatsup.mp3")} />
       </Sequence>
 
       {/* Debug overlay */}
@@ -125,11 +154,16 @@ export const AutoNateIntro: React.FC = () => {
           borderRadius: 4,
         }}
       >
-        Frame: {frame} / {fps} fps | {isTalking ? "🗣️ Talking" : "😐 Idle"}
+        Frame: {frame} / {fps} fps |{" "}
+        {isNarratorSpeaking
+          ? "Narrator"
+          : isAutoNateSpeaking
+            ? "AutoNate (waving)"
+            : "Idle"}
       </div>
 
       {/* Subtitles */}
-      {isTalking && (
+      {subtitleText && (
         <AbsoluteFill
           style={{
             justifyContent: "flex-end",
@@ -149,6 +183,13 @@ export const AutoNateIntro: React.FC = () => {
               textAlign: "center",
             }}
           >
+            {isAutoNateSpeaking && (
+              <span
+                style={{ color: "#4fc3f7", fontWeight: "bold", fontSize: 14 }}
+              >
+                AutoNate:{" "}
+              </span>
+            )}
             {subtitleText}
           </div>
         </AbsoluteFill>
