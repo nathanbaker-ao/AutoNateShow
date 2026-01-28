@@ -37,6 +37,7 @@ export const AutoNateScene: React.FC = () => {
       <ThreeCanvas
         width={width}
         height={height}
+        dpr={2}
         camera={{
           position: [0, cameraY, 4.5],
           fov: 50,

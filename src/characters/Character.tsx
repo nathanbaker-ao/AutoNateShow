@@ -51,21 +51,24 @@ export const Character: React.FC<CharacterProps> = ({
           const mat = (mesh.material as THREE.Material).clone();
           mesh.material = mat;
 
-          // Enhance texture filtering for better quality
-          if ((mat as THREE.MeshStandardMaterial).map) {
-            const texture = (mat as THREE.MeshStandardMaterial).map!;
+          // Helper to enhance any texture
+          const enhanceTexture = (texture: THREE.Texture | null) => {
+            if (!texture) return;
             texture.minFilter = THREE.LinearMipmapLinearFilter;
             texture.magFilter = THREE.LinearFilter;
-            texture.anisotropy = 16; // Max anisotropic filtering
+            texture.anisotropy = 16;
+            texture.generateMipmaps = true;
             texture.needsUpdate = true;
-          }
-          if ((mat as THREE.MeshStandardMaterial).normalMap) {
-            const normalMap = (mat as THREE.MeshStandardMaterial).normalMap!;
-            normalMap.minFilter = THREE.LinearMipmapLinearFilter;
-            normalMap.magFilter = THREE.LinearFilter;
-            normalMap.anisotropy = 16;
-            normalMap.needsUpdate = true;
-          }
+          };
+
+          // Enhance all texture maps for maximum sharpness
+          const stdMat = mat as THREE.MeshStandardMaterial;
+          enhanceTexture(stdMat.map);           // Diffuse/albedo
+          enhanceTexture(stdMat.normalMap);     // Normal map
+          enhanceTexture(stdMat.roughnessMap);  // Roughness
+          enhanceTexture(stdMat.metalnessMap);  // Metalness
+          enhanceTexture(stdMat.aoMap);         // Ambient occlusion
+          enhanceTexture(stdMat.emissiveMap);   // Emissive
         }
       }
     });
