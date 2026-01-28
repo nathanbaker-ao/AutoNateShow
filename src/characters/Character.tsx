@@ -1,5 +1,5 @@
 import React, { useRef, useMemo, useEffect } from "react";
-import { useGLTF, useAnimations, Clone } from "@react-three/drei";
+import { useGLTF, useAnimations } from "@react-three/drei";
 import { useCurrentFrame, useVideoConfig, staticFile } from "remotion";
 import * as THREE from "three";
 import * as SkeletonUtils from "three/examples/jsm/utils/SkeletonUtils.js";
@@ -120,6 +120,8 @@ export const Character: React.FC<CharacterProps> = ({
 interface AutoNateProps {
   /** Whether AutoNate is currently talking */
   talking?: boolean;
+  /** Whether AutoNate is walking (uses walking model if available, otherwise idle) */
+  walking?: boolean;
   /** Position in 3D space */
   position?: [number, number, number];
   /** Rotation in radians */
@@ -132,14 +134,21 @@ interface AutoNateProps {
 
 export const AutoNate: React.FC<AutoNateProps> = ({
   talking = false,
+  walking = false,
   position = [0, 0, 0],
   rotation = [0, 0, 0],
   scale = 1,
   animationSpeed = 1,
 }) => {
-  const modelPath = talking
-    ? staticFile("characters/autonate-talking.glb")
-    : staticFile("characters/autonate-idle.glb");
+  // Priority: talking > walking > idle
+  let modelPath: string;
+  if (talking) {
+    modelPath = staticFile("characters/autonate-talking.glb");
+  } else if (walking) {
+    modelPath = staticFile("characters/autonate-walking.glb");
+  } else {
+    modelPath = staticFile("characters/autonate-idle.glb");
+  }
 
   return (
     <Character
@@ -151,6 +160,94 @@ export const AutoNate: React.FC<AutoNateProps> = ({
       loop={true}
     />
   );
+};
+
+/**
+ * Waypoint for defining a walking path
+ */
+export interface Waypoint {
+  /** Position [x, y, z] */
+  position: [number, number, number];
+  /** Frame number when character should arrive at this point */
+  frame: number;
+}
+
+/**
+ * Calculate position and rotation along a path of waypoints
+ * Returns interpolated position and rotation to face movement direction
+ */
+export const useWalkingPath = (
+  waypoints: Waypoint[],
+  baseY: number = 0
+): { position: [number, number, number]; rotation: [number, number, number]; isMoving: boolean } => {
+  const frame = useCurrentFrame();
+
+  // Need at least 2 waypoints for a path
+  if (waypoints.length < 2) {
+    const pos = waypoints[0]?.position ?? [0, baseY, 0];
+    return {
+      position: [pos[0], baseY, pos[2]],
+      rotation: [0, 0, 0],
+      isMoving: false,
+    };
+  }
+
+  const firstFrame = waypoints[0].frame;
+  const lastFrame = waypoints[waypoints.length - 1].frame;
+
+  // Character is moving if we're within the path timeline
+  const isWithinPath = frame >= firstFrame && frame < lastFrame;
+
+  // Find the current segment (which two waypoints we're between)
+  let startWaypoint = waypoints[0];
+  let endWaypoint = waypoints[1];
+  let segmentIndex = 0;
+
+  for (let i = 0; i < waypoints.length - 1; i++) {
+    if (frame >= waypoints[i].frame && frame <= waypoints[i + 1].frame) {
+      startWaypoint = waypoints[i];
+      endWaypoint = waypoints[i + 1];
+      segmentIndex = i;
+      break;
+    }
+    // If we're past all waypoints, stay at the last one
+    if (frame > waypoints[i + 1].frame) {
+      startWaypoint = waypoints[i + 1];
+      endWaypoint = waypoints[i + 1];
+      segmentIndex = i + 1;
+    }
+  }
+
+  // Calculate interpolation progress within the segment
+  const segmentDuration = endWaypoint.frame - startWaypoint.frame;
+  const progress = segmentDuration > 0
+    ? Math.max(0, Math.min(1, (frame - startWaypoint.frame) / segmentDuration))
+    : 1;
+
+  // Interpolate position
+  const x = startWaypoint.position[0] + (endWaypoint.position[0] - startWaypoint.position[0]) * progress;
+  const z = startWaypoint.position[2] + (endWaypoint.position[2] - startWaypoint.position[2]) * progress;
+
+  // Calculate rotation to face movement direction
+  // Use current segment direction, or look ahead to next segment if at a waypoint
+  let dx = endWaypoint.position[0] - startWaypoint.position[0];
+  let dz = endWaypoint.position[2] - startWaypoint.position[2];
+
+  // If current segment has no movement (same start/end), look at next segment for rotation
+  if (Math.abs(dx) < 0.001 && Math.abs(dz) < 0.001 && segmentIndex < waypoints.length - 2) {
+    const nextWaypoint = waypoints[segmentIndex + 2];
+    dx = nextWaypoint.position[0] - endWaypoint.position[0];
+    dz = nextWaypoint.position[2] - endWaypoint.position[2];
+  }
+
+  const hasDirection = Math.abs(dx) > 0.001 || Math.abs(dz) > 0.001;
+  const rotationY = hasDirection ? Math.atan2(dx, dz) : 0;
+
+  return {
+    position: [x, baseY, z],
+    rotation: [0, rotationY, 0],
+    isMoving: isWithinPath,
+  };
 };
 
 /**
@@ -171,3 +268,4 @@ export const preloadCharacter = (modelPath: string) => {
 // Preload AutoNate models
 preloadCharacter(staticFile("characters/autonate-idle.glb"));
 preloadCharacter(staticFile("characters/autonate-talking.glb"));
+preloadCharacter(staticFile("characters/autonate-walking.glb"));

@@ -3,7 +3,6 @@ import {
   AbsoluteFill,
   Sequence,
   useCurrentFrame,
-  useVideoConfig,
   interpolate,
   staticFile,
 } from "remotion";
@@ -19,7 +18,6 @@ import { Scene } from "../scenes";
  */
 export const ComedySkit: React.FC = () => {
   const frame = useCurrentFrame();
-  const { fps, durationInFrames } = useVideoConfig();
 
   // Define your characters
   // Place .glb files in public/characters/ folder
@@ -30,7 +28,6 @@ export const ComedySkit: React.FC = () => {
       position: [-1.5, 0, 0] as [number, number, number],
       rotation: [0, 0.3, 0] as [number, number, number],
       scale: 1,
-      animationName: "Idle",
     },
     {
       id: "character-2",
@@ -38,7 +35,6 @@ export const ComedySkit: React.FC = () => {
       position: [1.5, 0, 0] as [number, number, number],
       rotation: [0, -0.3, 0] as [number, number, number],
       scale: 1,
-      animationName: "Idle",
     },
   ];
 

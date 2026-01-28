@@ -10,7 +10,6 @@ interface SceneCharacter {
   position?: [number, number, number];
   rotation?: [number, number, number];
   scale?: number;
-  animationName?: string;
 }
 
 interface DialogueLine {
@@ -53,7 +52,7 @@ export const Scene: React.FC<SceneProps> = ({
   mainLightIntensity = 0.8,
   children,
 }) => {
-  const { width, height, fps } = useVideoConfig();
+  const { width, height } = useVideoConfig();
 
   return (
     <AbsoluteFill style={{ backgroundColor }}>
@@ -91,7 +90,6 @@ export const Scene: React.FC<SceneProps> = ({
               position={char.position}
               rotation={char.rotation}
               scale={char.scale}
-              animationName={char.animationName}
             />
           </Sequence>
         ))}
